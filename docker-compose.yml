@@ -1,0 +1,51 @@
+version: '2'
+services:
+    nginx:
+        image: nginx:latest
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./hosts:/etc/nginx/conf.d
+            - ./www:/var/www
+            - ./logs:/var/log/nginx
+        links:
+            - php
+    php:
+        build: .
+        working_dir: /var/www
+        links:
+            - db
+        environment:
+            PHP_FPM_USER: root
+            PHP_FPM_PORT: 8080
+            PHP_ERROR_REPORTING: E_ALL
+            ENVIRONMENT: dev
+        volumes:
+            - ./www:/var/www
+    db:
+        image: mariadb:latest
+        user: '1000:50'
+        restart: always
+        ports:
+            - 3306:3306
+        volumes:
+            - ./mysql:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: secret
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        environment:
+            - PMA_ARBITRARY=1
+        restart: always
+        volumes:
+            - /sessions
+        links:
+            - db:mysql
+        ports:
+            - 8081:80
+        environment:
+            MYSQL_USERNAME: root
+            MYSQL_ROOT_PASSWORD: secret
+            PMA_HOST: db
